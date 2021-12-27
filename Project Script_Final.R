@@ -115,8 +115,8 @@ for(i in colnames(Greenhouse_Gas_Emissions)){
   }
 }
 
-# Sense el  (breaks = "FD") alguns histogrames es veuen millor.
-rm(i)  #Afegit Uri
+
+rm(i)  
 
 
 # Bivariate Description of Numerical Variables
@@ -572,7 +572,39 @@ plot(co2~year, data=subset1)
 
 #We can see it would better fit an exponential type function
 
-# Anyways, we do a function that does a linear model with the last 30 decades and then...
+# Anyways, we do a function that does a linear model with the last 3 decades and then...
+# ... predicts the average anual emission in the next decades.
+
+
+decadepredict <- function(Country="World",Decade=2030) {
+  
+  gases <- c("co2","methane", "nitrous_oxide")
+  
+  for (i in 1:3) {
+  subset1 <- subset(df, decadenum==1 & country==Country)
+  subset2 <- subset(df, decadenum==2 & country==Country)
+  subset3 <- subset(df, decadenum==3 & country==Country)
+  
+  m1co2 <- mean(subset1[,gases[i]],na.rm=T)
+  m2co2 <- mean(subset2[,gases[i]],na.rm=T)
+  m3co2 <- mean(subset3[,gases[i]],na.rm=T)
+  
+  datatoadjust <- data.frame(c(m1co2,m2co2,m3co2),c(1,2,3))
+  names(datatoadjust) <- c("y","x")
+  model <- lm(y~x, data=datatoadjust)
+  summary(model)
+  
+  new <- data.frame(x = (Decade-1990)/10)
+  cat("Prediction for average anual emissions of", gases[i], "in", Country, "in the decade", 
+      Decade, "is:", predict(model,new), "million tones", "\n")
+  }
+}
+
+decadepredict()
+decadepredict("Spain",2050)
+
+
+# Also, we do a function that does a linear model with the last 30 years and then...
 # ... predicts for future years.
 
 Greenhouse_Gas_Emissions$decade <- cut2(Greenhouse_Gas_Emissions$year, c(seq(from=1750, to=2020, by=10)))
@@ -618,6 +650,11 @@ Prediction("China", 2035)
 # ... the individual heterogeneity across countries.
 
 
+#Also: A package has been created and uploaded to Github with some of the functions and data from this script.
+# To download the package and use it go to: https://github.com/oriol33/R-library-CO2
+
+
+
 avgco2 <- with(subset(Greenhouse_Gas_Emissions, country == "World"),tapply(co2, decade, mean, na.rm=T))
 avgmethane <- with(subset(Greenhouse_Gas_Emissions, country == "World"),tapply(methane, decade, mean, na.rm=T))
 avgnitrous <- with(subset(Greenhouse_Gas_Emissions, country == "World"),tapply(nitrous_oxide, decade, mean, na.rm=T))
@@ -649,6 +686,12 @@ Climatedisasters <- read.csv2("Climate_related_disasters_frequency.csv",header =
 
 s2 <- matrix(subset(Climatedisasters, ISO2=="AQ"&Indicator=="Climate related disasters frequency, Number of Disasters: TOTAL")[,8:ncol(Climatedisasters)],ncol=1)
 disasters <- data.frame("year"=1980:2020, "Total number of disasters"=as.numeric(s2))
+
+meanglobaltemp <- read.csv2("Mean_Global_Surface_Temperature.csv",header = T,sep = ",")
+s1 <- matrix(subset(meanglobaltemp, Country=="World")[,8:ncol(meanglobaltemp)],ncol=1)
+avg_change_temp_world <- data.frame("year"=1961:2020, "Avg. Change in temperature"=as.numeric(s1))
+
+
 dataframe2 <- merge(disasters, avg_change_temp_world, by='year')
 
 # Correlation matrix
@@ -719,3 +762,14 @@ axis(4, ylim=c(0,7000), col="blue",col.axis="blue",las=1)
 mtext("Nitrous oxide emissions in tonnes",side=4,col="blue",line=4) 
 axis(1,pretty(range(dataframe$year),10))
 mtext("Years",side=1,col="black",line=2.5) 
+
+
+#e) A library has been created and uploaded to Github with all of the functions and data from this script.
+# To download the package and use it go to: https://github.com/oriol33/R-library-CO2
+
+
+
+
+
+
+
