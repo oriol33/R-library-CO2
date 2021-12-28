@@ -1,0 +1,741 @@
+---
+title: "R Project"
+author: "Adri Pérez, Oriol Gairín"
+date: "28/12/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:\Users\34695\Desktop\MESIO\01-Programación en R y SAS\R\Entrega")
+```
+
+We are going to use the following libraries:
+```{r}
+library(readxl)
+library(Hmisc)
+library(vtable)
+library(reshape2)
+library(ggplot2)
+library(doBy)
+library(data.table)
+library(writexl)
+library(tidyverse)
+```
+
+We also import some useful functions we have create to perform some plots:
+```{r}
+source("Extra_Functions.R")
+```
+
+# EXERCISE 1
+## Data Importation 
+```{r}
+Greenhouse_Gas_Emissions <- read_excel("owid-co2-data.xlsx")
+Greenhouse_Gas_Emissions <- data.frame(Greenhouse_Gas_Emissions)
+str(Greenhouse_Gas_Emissions)
+```
+
+We transform the character and logical variables to factors so that we can work better with them. 
+```{r}
+for(i in colnames(Greenhouse_Gas_Emissions)){
+  if(is.character(Greenhouse_Gas_Emissions[,i])|is.logical(Greenhouse_Gas_Emissions[,i])){
+    Greenhouse_Gas_Emissions[,i] <- as.factor(Greenhouse_Gas_Emissions[,i])
+  }
+}
+rm(i)
+```
+
+Now, we add labels to the variables and we describe each variable as well as expressing the units they are measured in:
+```{r}
+var.labels <- c(iso_code = "ISO 3166-1 alpha-3 - three-letter country codes",
+                country =	"Geographic location",
+                year = "Year of observation",
+                co2 = "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes",
+                co2_per_capita = "Annual production-based emissions of carbon dioxide (CO2), measured in tonnes per person",
+                trade_co2 = "Annual net carbon dioxide (CO2) emissions embedded in trade, measured in million tonnes",
+                cement_co2 = "Annual production-based emissions of carbon dioxide (CO2) from cement, measured in million tonnes",
+                cement_co2_per_capita	= "Annual production-based emissions of carbon dioxide (CO2) from cement, measured in tonnes per person",
+                coal_co2 = "Annual production-based emissions of carbon dioxide (CO2) from coal, measured in million tonnes",
+                coal_co2_per_capita =	"Annual production-based emissions of carbon dioxide (CO2) from coal, measured in tonnes per person",
+                flaring_co2 = "Annual production-based emissions of carbon dioxide (CO2) from flaring, measured in million tonnes",
+                flaring_co2_per_capita = "Annual production-based emissions of carbon dioxide (CO2) from flaring, measured in tonnes per person",
+                gas_co2 = "Annual production-based emissions of carbon dioxide (CO2) from gas, measured in million tonnes",
+                gas_co2_per_capita = "Annual production-based emissions of carbon dioxide (CO2) from gas, measured in tonnes per person",
+                oil_co2 = "Annual production-based emissions of carbon dioxide (CO2) from oil, measured in million tonnes",
+                oil_co2_per_capita = "Annual production-based emissions of carbon dioxide (CO2) from oil, measured in tonnes per person",
+                other_industry_co2 = "Annual production-based emissions of carbon dioxide (CO2) from other industry sources, measured in million tonnes",
+                other_co2_per_capita = "Annual production-based emissions of carbon dioxide (CO2) from other industry sources, measured in tonnes per person",
+                co2_growth_prct = "Annual percentage growth in production-based emissions of carbon dioxide (CO2)",
+                co2_growth_abs = "Annual growth in production-based emissions of carbon dioxide (CO2), measured in million tonnes",
+                co2_per_gdp = "Annual production-based emissions of carbon dioxide (CO2), measured in kilograms per dollar of GDP (2011 international-$)",
+                co2_per_unit_energy = "Annual production-based emissions of carbon dioxide (CO2), measured in kilograms per kilowatt-hour of primary energy consumption",
+                consumption_co2 = "Annual consumption-based emissions of carbon dioxide (CO2), measured in million tonnes",
+                consumption_co2_per_capita = "Annual consumption-based emissions of carbon dioxide (CO2), measured in tonnes per person",
+                consumption_co2_per_gdp = "Annual consumption-based emissions of carbon dioxide (CO2), measured in kilograms per dollar of GDP (2011 international-$)",
+                cumulative_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) since the first year of data availability, measured in million tonnes)",
+                cumulative_cement_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) from cement since the first year of data availability, measured in million tonnes",
+                cumulative_coal_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) from coal since the first year of data availability, measured in million tonnes",
+                cumulative_flaring_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) from flaring since the first year of data availability, measured in million tonnes",
+                cumulative_gas_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) from gas since the first year of data availability, measured in million tonnes",
+                cumulative_oil_co2= "Cumulative production-based emissions of carbon dioxide (CO2) from oil since the first year of data availability, measured in million tonnes",
+                cumulative_other_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) from other industry sources since the first year of data availability, measured in million tonnes",
+                trade_co2_share = "Annual net carbon dioxide (CO2) emissions embedded in trade, measured as a percentage of production-based emissions of CO2",
+                share_global_co2 = "Annual production-based emissions of carbon dioxide (CO2), measured as a percentage of global production-based emissions of CO2 in the same year",
+                share_global_cement_co2 = "Annual production-based emissions of carbon dioxide (CO2) from cement, measured as a percentage of global production-based emissions of CO2 from cement in the same year",
+                share_global_coal_co2 = "Annual production-based emissions of carbon dioxide (CO2) from coal, measured as a percentage of global production-based emissions of CO2 from coal in the same year",
+                share_global_flaring_co2 = "Annual production-based emissions of carbon dioxide (CO2) from flaring, measured as a percentage of global production-based emissions of CO2 from flaring in the same year",
+                share_global_gas_co2 = "Annual production-based emissions of carbon dioxide (CO2) from gas, measured as a percentage of global production-based emissions of CO2 from gas in the same year",
+                share_global_oil_co2 = "Annual production-based emissions of carbon dioxide (CO2) from oil, measured as a percentage of global production-based emissions of CO2 from oil in the same year",
+                share_global_other_co2 = "Annual production-based emissions of carbon dioxide (CO2) from other industry sources, measured as a percentage of global production-based emissions of CO2 from other industry sources in the same year",
+                share_global_cumulative_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) since the first year of data availability, measured as a percentage of global cumulative production-based emissions of CO2 since the first year of data availability",
+                share_global_cumulative_cement_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) from cement since the first year of data availability, measured as a percentage of global cumulative production-based emissions of CO2 from cement since the first year of data availability",
+                share_global_cumulative_coal_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) from coal since the first year of data availability, measured as a percentage of global cumulative production-based emissions of CO2 from coal since the first year of data availability",
+                share_global_cumulative_flaring_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) from flaring since the first year of data availability, measured as a percentage of global cumulative production-based emissions of CO2 from flaring since the first year of data availability",
+                share_global_cumulative_gas_co2 =	"Cumulative production-based emissions of carbon dioxide (CO2) from gas since the first year of data availability, measured as a percentage of global cumulative production-based emissions of CO2 from gas since the first year of data availability",
+                share_global_cumulative_oil_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) from oil since the first year of data availability, measured as a percentage of global cumulative production-based emissions of CO2 from oil since the first year of data availability",
+                share_global_cumulative_other_co2 = "Cumulative production-based emissions of carbon dioxide (CO2) from other industry sources since the first year of data availability, measured as a percentage of global cumulative production-based emissions of CO2 from other industry sources since the first year of data availability",
+                total_ghg = "Total greenhouse gas emissions including land use change and forestry, measured in million tonnes of carbon dioxide-equivalents",
+                ghg_per_capita = "Total greenhouse gas emissions including land use change and forestry, measured in tonnes of carbon dioxide-equivalents per capita",
+                methane = "Total methane emissions including land use change and forestry, measured in million tonnes of carbon dioxide-equivalents",
+                methane_per_capita = "Total methane emissions including land use change and forestry, measured in tonnes of carbon dioxide-equivalents per capita",
+                nitrous_oxide = "Total nitrous oxide emissions including land use change and forestry, measured in million tonnes of carbon dioxide-equivalents",
+                nitrous_oxide_per_capita = "Total nitrous oxide emissions including land use change and forestry, measured in tonnes of carbon dioxide-equivalents per capita",
+                population = "Population by country, available from 1800 to 2021 based on Gapminder data, HYDE, and UN Population Division (2019) estimates",
+                gdp = "Gross domestic product measured in international-$ using 2011 prices to adjust for price changes over time (inflation) and price differences between countries",
+                primary_energy_consumption = "Primary energy consumption, measured in terawatt-hours per year",
+                energy_per_capita = "Primary energy consumption per capita, measured in kilowatt-hours per year",
+                energy_per_gdp = "Primary energy consumption per unit of gross domestic product, measured in kilowatt-hours per international-$")
+
+label(Greenhouse_Gas_Emissions) = as.list(var.labels[match(names(Greenhouse_Gas_Emissions), names(var.labels))])
+```
+
+## Data descriptive analysis
+```{r}
+dim(Greenhouse_Gas_Emissions)
+```
+The data set has 25204 observations, which is given by the total number of rows, and 58 variables, which is given by the total number of variables.
+
+To perform an accurate descriptive analysis, we need to differentiate between two types of variables: numeric and categorical. In this code chunk we get a vector with the names of all numeric variables and another with the names of all categorical variables. 
+```{r}
+numericvar <- vector()
+for(i in colnames(Greenhouse_Gas_Emissions)){
+  if(is.numeric(Greenhouse_Gas_Emissions[,i])){
+    numericvar <- append(numericvar, i)
+  }
+}
+rm(i)
+
+charactervar <- vector()
+for(i in colnames(Greenhouse_Gas_Emissions)){
+  if(is.character(Greenhouse_Gas_Emissions[,i])|is.factor(Greenhouse_Gas_Emissions[,i])|is.logical(Greenhouse_Gas_Emissions[,i])){
+    charactervar <- append(charactervar, i)
+  }
+}
+rm(i)
+```
+
+### Univariate Descriptive Analysis
+
+#### Numeric Variables
+
+We represent the main descriptive statistics of our numeric variables in the following table:
+```{r}
+sumtable(Greenhouse_Gas_Emissions, vars = numericvar,
+         summ = c('mean(x)', 'median(x)', 'sd(x)', 'min(x)','pctile(x)[25]', 'pctile(x)[75]','max(x)'), 
+         summ.names = c('Mean','Median','Std. Dev.','Min','Pctl. 25','Pctl. 75','Max'),
+         out="return", factor.numeric = T)
+```
+
+And we can use an histogram to inspect the empirical distribution of our variables graphically:
+```{r}
+for(i in numericvar){
+  hist(Greenhouse_Gas_Emissions[,i], xlab = i, main = paste("Histogram for ", i), col = "blue", freq = F,
+       ylim=(c(0, max(density(Greenhouse_Gas_Emissions[,i], na.rm = T)[["y"]]))))
+  lines(density(Greenhouse_Gas_Emissions[,i], na.rm = T), col="darkgreen", lwd=2)
+}
+```
+As it can be observed in both the histograms and the descriptive statistics we have several variables that are positive skewed, i.e. they have a large concentration of observation in the left but some extreme values in the right tail. This is the case, for instance, for variables of our interest such as co2, methane and nitrous oxide, which implies that there are some countries that produce a lot of these three variables while others produce much less.
+
+The green line in the plots represents the kernel density line, a non parametric measure for the estimation of our distribution. The density line will be higher where there is a larger concentration of observations for a given variable. 
+
+#### Categorical Variables
+
+We do not include the variables country and iso_code in the following analysis since they have many categories and, therefore, the table would be extremely large. However, we print one of these two (since they represent the same thing) in the barplots. 
+```{r}
+sumtable(Greenhouse_Gas_Emissions, vars = charactervar[3:length(charactervar)], out="return")
+```
+
+```{r}
+for(i in charactervar[2:length(charactervar)]){
+  barplot(table(Greenhouse_Gas_Emissions[,i]), main = paste("Barplot for ",i), col = "red4")
+}
+rm(i)
+```
+From the bar plot for country, one can easily observe that there are a lot of observations for some countries or regions, while there just a few for other countries or regions, i.e. the data set is unbalanced. 
+
+### Bivariate analysis 
+
+We will focus on analyzing how the numeric variables relates to each other. For this purpose we will use a correlation matrix that we represent graphically. 
+```{r}
+cormat <- round(cor(Greenhouse_Gas_Emissions[, numericvar], use = "complete"),2)
+melted_cormat <- melt(cormat)
+get_upper_tri <- function(cormat){
+  cormat[lower.tri(cormat)]<- NA
+  return(cormat)
+}
+upper_tri <- get_upper_tri(cormat)
+melted_cormat <- melt(upper_tri, na.rm = TRUE)
+ggplot(data = melted_cormat, aes(Var2, Var1, fill = value)) + geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0, limit = c(-1,1), space = "Lab",                        name="Pearson\nCorrelation") +
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90,hjust=1,vjust=0,size = 7),
+                          axis.text.y = element_text(size = 7)) + coord_fixed()
+```
+There seems to be a high positive correlation between our three variables of interest (co2, methane and nirous oxide). The Pearson correlation coefficient between methane and co2 is 0.98, for co2 and nitrous oxide it is 0.98 as well and for methane and nitrous oxide this is 0.99. 
+
+It is also interesting to see how these variables of interest relate to economic and demographic variables such as the population and the gross domestic product (GDP). From the heat map, one can see how there is a positive correlation with our variables of interest and both the GDP and the population, although it is higher for the first one than for the second one. 
+
+
+## Graphical Representation of co2, methane and nitrous oxide together by year and by country
+
+The function plots() is able to represent a time series of co2, methane and nitrous oxide different countries in different graphics or for all countries together using the world's values. The argument that this function takes as default is "World", i.e. it represents the total gas emissions in our planet each year. 
+```{r}
+plots()
+```
+It is worth noticing how the co2 emissions have been increasing exponentially until some time ago and now this is decreasing. However, the emissions of methane and nitrous oxide have been increasing in the last years. 
+
+We can also, plot the same but for just some countries that are of our interest. We use this function now for Spain, Germany and France.
+```{r}
+plots(c("Spain", "Germany", "France"))
+```
+For these three countries, we can observe that the co2 emissions had been growing exponentially but just until the 2000 for Spain and during the 90s for Germany and France. Moreover, for Germany and France, we can see how the co2 emissions were reduced dramatically during the 30s and the World War II. 
+
+The emissions of nitrous oxide and methane have been reduced during the last period by both Germany and France, although this is not the case of Spain, which seems to have constant levels of these gas emissions. 
+
+NOTE: if we wanted to obtained this graph for all the levels of our variable country, we just should to use "all" as an argument to our function plots(). We are not going to use it here because it would make this report extremely large since this wold return more than 200 plots. 
+
+## Aggregation by decade
+
+Now, we create a variable named decade that represent the years aggregated in decades. For instance, from 1810 to 1819 is aggregated in [1810, 1820). 
+```{r}
+min(Greenhouse_Gas_Emissions$year) # This is used to know the first year of our observations
+max(Greenhouse_Gas_Emissions$year) # This is used to know the last year of our observations
+Greenhouse_Gas_Emissions$decade <- cut2(Greenhouse_Gas_Emissions$year, c(seq(from=1750, to=2020, by=10)))
+```
+
+Now, we obtain a new data set by subsetting the previous one by the last three decades. 
+```{r}
+df<-data.frame(subset(Greenhouse_Gas_Emissions,
+                      decade=="[1990,2000)"|decade=="[2000,2010)"|decade=="[2010,2020]"))  
+```
+
+### Summary statistics of numeric variables by the last three decades
+
+```{r}
+summarystatistics <- summaryBy(df[,numericvar] ~ decade, data = df, FUN = c(mean, sd, median, IQR), na.rm=T)
+summarystatistics
+```
+
+### Decade Mean Variations 
+
+To observe the differences of means between one decade and the previous one, we will use the function decadechangeplots(). This function will provide a time series of the differences in means between one period and the previous one and the confidence interval for this difference in means. This is done for the three gases considered in this report (co2, methane, nitrous oxide). If the confidence interval crosses the 0 horizontal line, then the mean of this period is not statistically different from the mean of the previous decade. In order to compute this confidence intervals, we have used the case of comparing different means with unknown and unequal variances since these seem to vary a lot from one decade to another. 
+
+Under the null hypothesis of both means being equal, we have that the following is satisfied:
+$ \bar{X_{1}} - \bar{X__{2}} \sim t_{g}$ where $ g=(S_{1}^2/n_1 + S_{2}^2/n_2)^2/((S_{1}^2/n_1)^2/(n_1+1)+(S_{2}^2/n_2)^2/(n_2+1))  $ are the degrees of freedom of the t-student distribution. We asume, although this is a very strong assumption considering that we are working with panel data, that both means are independent. 
+
+If we want to see the decade mean variations for all countries together, we analyze this variations for the level country equal to "world". In order to do that, we do not need to pass any argument to our function since this is what it does by default. Then: 
+```{r}
+decadechangeplots()
+```
+The plot shows have the average co2 mean change decade by decade has been positive and significant for most of the decades, especially for the ones from 1830 onward, except for the one of the decade [1930, 1940). The mean change of methane and nitrous oxide has been also positively significant in the periods they have been recorded. 
+
+Now, if what we want is to obtain this graphic for the top 10 co2 producers, we need to find which these are. We do this exploring the following data frame:
+```{r}
+avgco2_bycandd <- data.frame(summaryBy(co2 ~ country + decade, Greenhouse_Gas_Emissions, FUN = mean, na.rm=T))
+avgmethane_bycandd <- data.frame(summaryBy(methane ~ country + decade, Greenhouse_Gas_Emissions, FUN = mean, na.rm=T))
+avgnitrous_bycandd <- data.frame(summaryBy(nitrous_oxide ~ country + decade, Greenhouse_Gas_Emissions, FUN = mean, na.rm=T))
+
+co2production <- setorder(data.frame(summaryBy(co2 ~ country, Greenhouse_Gas_Emissions, FUN = mean, na.rm=T)), -co2.mean, na.last = T)
+co2production[1:30,]
+```
+
+We use the 30 first rows and not just the first 10 to choose our countries to represent graphically because there are some levels that are not countries but regions or organizations (such as the Kuwait Oil Fires). If we ignore these last ones, then the countries to consider are the following ones:
+```{r}
+countries <- c("United States", "China", "Russia", "Japan", "Germany", "India", "United Kingdom", "Saudi Arabia", "France", "Ukraine")
+```
+
+And we can pass this as an argument to our function:
+```{r}
+decadechangeplots(countries)
+```
+While many countries show a decrease of the gas emissions in the last decades, as the change in the means and its confidence intervals are below the 0 line, others like India, China and Saudi Arabia show important increments in the gas emissions, specially for the co2 case. 
+
+## Aggregating by country
+Now, we aggregate the last data set by country using the mean of the last three decades for each variable. They we will get one row for each level of country. 
+```{r}
+aggco2 <- aggregate(df[,numericvar], by=list(df$country), FUN = mean, na.rm=T)
+write_xlsx(aggco2,"aggco2.xlsx")
+```
+
+# EXERCISE 2
+## Graphical Representation using GGPlot
+
+As we noted in the bivariate descriptive analysis, there seemed to be positive relationship between the co2 production and the population. In order to show this graphically, we will use an scatterplot. We will use the data set that contains just observations for the last three decades. 
+
+```{r}
+ggplot(df, aes(x = gdp, y = co2, shape=decade, color=decade)) + geom_point() + 
+  geom_smooth(method=lm, fullrange=T)
+```
+Although it is true that there is a positive relationship between both variables, this seems to be non linear, since for small increments in the GDP, we get large increments in the co2 production when the GDP and co2 levels are small while for large increments in the GDP we get small increments of the co2 productions when both variable take large values. Another interesting insight from this plot is that economies seem to be capable of producing more and polluting less in the last decades since the slope of the adjusted line is substantially lower. 
+
+In order to get a better fit, we use the following log-log transformation:
+```{r}
+ggplot(df, aes(x = log(gdp), y = log(co2), shape=decade, color=decade)) + geom_point() + 
+  geom_smooth(method=lm, fullrange=T)
+```
+
+## Pie Chart of top country CO2 emitters using plotrix package
+
+In order to have a graphical comparison of the major CO2 country emitters, we will perform a 3D pie chart comparing them with the rest of the World. We will be focused on the last decade of data available, in order to obtain a more accurate representation of the current situation of CO2 emissions.  
+
+We first take the set containing the last decade [2010,2020] and then examine which ones have overall higher anual emissions.
+```{r}
+df2 <- subset(Greenhouse_Gas_Emissions, decade == "[2010,2020]")
+co2production <- setorder(data.frame(summaryBy(co2 ~ country, df2, FUN = mean, na.rm=T)), -co2.mean, na.last = T)
+co2production[1:30,]
+```
+We then take the top 5 countries, excluding bigger regions or continents. Then we sum the total emissions of CO2 of each country in the last decade. Note we also need the total sum of the World CO2 emissions, to then compute the total CO2 emissions produced for all the rest of the countries (Others).
+
+```{r}
+countries <-c("China","United States", "India" ,"Rusia", "Japan", "World")
+
+df3<-data.frame(subset(df2, country=="United States" | country=="World"
+                       | country=="China" | country=="Russia"| country=="Japan"
+                       | country=="India" )) 
+
+sumco2 <- df3 %>%
+  group_by(country) %>%
+  summarise(Sum=sum(co2))
+
+sumco2
+
+sumco2 <- sumco2[,2]
+Others <- sumco2[6,1]-sum(sumco2[1:5,1])
+
+cat("Rest of the World:", as.vector(t(Others)) )
+
+sumco2[6,1] <- Others
+sumco2 <- as.vector(t(sumco2))
+
+```
+Finally, we produce the 3D pie chart with plotrix.
+
+```{r}
+library(plotrix)
+pie.labels <-  c("China", "India", "Japan", "Russia", "USA", "Others")
+lp<-pie3D(sumco2,radius=0.9,labels=pie.labels,explode=0.1,main="Main CO2 emitters in the last decade",
+          col=c("brown","aliceblue","pink","coral1", "grey", "cadetblue"))
+```
+
+
+# EXERCISE 3
+
+## a) Percentage increase between one decade and the following one.
+
+Firstly, to verify that the code works, we do our calculations first for one specific country and decade and after we generalize with a function. We will use country USA between the 1990 decade and 2000 decade.
+
+We will start with the dataframe Greenhouse_Gas_Emissions, in which we previously added a variable indicating in which decade is each year.
+
+Here, the idea is to divide in subsets the data corresponding to the country chosen for the initial decade and the following decade. Then, the average anual emissions are obtained for each decade and gas, and finally the percentage increase and the average of all years studied are calculated.
+
+
+```{r}
+subset1 <- data.frame(subset(Greenhouse_Gas_Emissions, decade=="[1990,2000)" & country=="United States"))
+subset2 <- data.frame(subset(Greenhouse_Gas_Emissions, decade=="[2000,2010)" & country=="United States"))
+
+inc_co2 <- 100*(mean(subset2[,"co2"])-mean(subset1[,"co2"]))/mean(subset1[,"co2"])
+inc_meth <- 100*(mean(subset2[,"methane"])-mean(subset1[,"methane"]))/mean(subset1[,"methane"])
+inc_nitox <- 100*(mean(subset2[,"nitrous_oxide"])-mean(subset1[,"nitrous_oxide"]))/mean(subset1[,"nitrous_oxide"])
+
+subsettot <- rbind(subset1,subset2)
+
+totavg_co2 <- mean(subsettot[,"co2"])
+totavg_met <- mean(subsettot[,"methane"])
+totavg_nitox <- mean(subsettot[,"nitrous_oxide"])
+
+cat("The percentage increase of the anual average emissions in USA between the 1900 decade and 2000 decade is: ", "\n")
+cat("CO2:",inc_co2, "%" ,"\n")
+cat("Methane:",inc_meth, "%","\n")
+cat("Nitrous Oxide:",inc_nitox, "%","\n","\n")
+cat("The anual total average emission in USA between 1990 and 2010 is: ","\n")
+cat("CO2:",totavg_co2, "million tonnes","\n")
+cat("Methane:",totavg_met, "million tonnes","\n")
+cat("Nitrous Oxide:",totavg_nitox, "million tonnes","\n")
+```
+
+Additionally, we offer a graph to see graphically the differences among decades.
+
+# Stacked Bar Plot with Colors and Legend
+```{r}
+table <- data.frame(c(mean(subset1[,"co2"]),mean(subset1[,"methane"]),mean(subset1[,"nitrous_oxide"])),
+                    c(mean(subset2[,"co2"]),mean(subset2[,"methane"]),mean(subset2[,"nitrous_oxide"])),
+                    row.names=c("CO2","Methane","Nitrous Oxide"))
+names(table) <- c("[1990,2000)","[2000,2010)")
+
+table <- as.matrix(table)
+
+par(mar=c(5.1, 4.1, 4.1, 10.1), xpd=TRUE)
+barplot(table, main="Anual mean gas emissions in USA on decades 1990 and 2000",
+        xlab="Decades", ylab="Million tones", col=c("darkblue","red", "orange")) 
+legend("topright", inset = c(-0.4, 0.5), xpd=T, legend = rownames(table),fill = c("darkblue", "red","orange"))
+```
+
+Now, we create a function to be able to perform the previous steps for whatever country and decade we want.
+
+In order for the function to work for all decades, we recode the last level of the variable decade, so that all levels have the same format.
+
+```{r}
+Greenhouse_Gas_Emissions$decade <- recode_factor(Greenhouse_Gas_Emissions$decade, "[2010,2020]"  = "[2010,2020)")
+```
+
+# Define the Function 
+```{r}
+Decades_Increase <- function(Country="United States", DecadeStart=1990) {
+  
+  #Calculations
+  
+  Decadelim1 <- DecadeStart+10
+  Decadelim2 <- DecadeStart+20
+  Decade1 <- paste("[",DecadeStart,",",DecadeStart+10,")",sep = "")
+  Decade2 <- paste("[",DecadeStart+10,",",DecadeStart+20,")",sep = "")
+  
+  subset1 <- data.frame(subset(Greenhouse_Gas_Emissions, decade==Decade1 & country==Country))
+  subset2 <- data.frame(subset(Greenhouse_Gas_Emissions, decade==Decade2 & country==Country))
+  
+  inc_co2 <- 100*( mean(subset2[,"co2"],na.rm=T)-mean(subset1[,"co2"],na.rm=T) )/mean(subset1[,"co2"],na.rm=T)
+  inc_meth <- 100*( mean(subset2[,"methane"],na.rm=T)-mean(subset1[,"methane"],na.rm=T) )/mean(subset1[,"methane"],na.rm=T)
+  inc_nitox <- 100*( mean(subset2[,"nitrous_oxide"],na.rm=T)-mean(subset1[,"nitrous_oxide"],na.rm=T) )/mean(subset1[,"nitrous_oxide"],na.rm=T)
+  
+  subsettot <- rbind(subset1,subset2)
+  
+  totavg_co2 <- mean(subsettot[,"co2"],na.rm=T)
+  totavg_met <- mean(subsettot[,"methane"],na.rm=T)
+  totavg_nitox <- mean(subsettot[,"nitrous_oxide"],na.rm=T)
+  
+  # Printing the results of percentage increase between decades and anual total average emission
+  
+  cat("The percentage increase of the anual average emissions in", Country, "between the", DecadeStart, "decade and", Decadelim1, "decade is:", "\n")
+  cat("CO2:",inc_co2, "%   ; ")
+  cat("Methane:",inc_meth, "%   ; ")
+  cat("Nitrous Oxide:",inc_nitox, "%", "\n", "\n")
+  cat("The anual total average emissions in", Country, "between", DecadeStart, "and", Decadelim2, "is:", "\n")
+  cat("CO2:",totavg_co2, "million tonnes   ; ")
+  cat("Methane:",totavg_met, "million tonnes   ; ")
+  cat("Nitrous Oxide:",totavg_nitox, "million tonnes.", "\n", "\n")
+  
+  # Stacked Bar Plot with Colors and Legend
+  
+  table <- data.frame(c(mean(subset1[,"co2"],na.rm=T),mean(subset1[,"methane"],na.rm=T),mean(subset1[,"nitrous_oxide"],na.rm=T)),
+                      c(mean(subset2[,"co2"],na.rm=T),mean(subset2[,"methane"],na.rm=T),mean(subset2[,"nitrous_oxide"],na.rm=T)),
+                      row.names=c("CO2","Methane","Nitrous Oxide"))
+  names(table) <- c(Decade1,Decade2)
+  
+  table <- as.matrix(table)
+  
+  par(mar=c(5.1, 4.1, 4.1, 10.1), xpd=TRUE)
+  barplot(table, main=paste("Anual mean gas emissions in", Country, "on decades", DecadeStart, "and", Decadelim1),
+          xlab="Decades", ylab="Million tones", col=c("darkblue","red", "orange")) 
+  legend("topright", inset=c(-0.4, 0.5), xpd=T, legend = rownames(table),fill = c("darkblue", "red","orange"))
+  
+}
+```
+
+We apply the function on various countries and for different decades.
+```{r}
+Decades_Increase("World", 1990)
+Decades_Increase("World", 2000)
+Decades_Increase("China", 1980)
+Decades_Increase("China", 1990)
+Decades_Increase("China", 2000)
+Decades_Increase("Spain", 1980)
+Decades_Increase("Japan", 1930)
+```
+
+Note that for Methane and Nitrous Oxide there is only data available since 1990. Therefore, when applying the function for more earlier decades, the function will not perform the analysis for Methane and Nitrous Oxide.
+
+
+## b) Projection of co2, methane and nitrous oxide by country and decade requiered.
+
+For this case, we will use the dataframe df containing the last 3 decades, so that we have the same amount of observations for all the gases studied.
+
+```{r}
+Greenhouse_Gas_Emissions$decade <- cut2(Greenhouse_Gas_Emissions$year, c(seq(from=1750, to=2020, by=10)))
+df<-data.frame(subset(Greenhouse_Gas_Emissions, decade=="[1990,2000)"|decade=="[2000,2010)"|decade=="[2010,2020]")) 
+```
+
+In order to perform a linear regression, recoding the decade variable to a numeric type variable will be useful.
+
+```{r}
+df$decadenum <- df$decade
+df$decadenum <- recode_factor(df$decadenum, "[1990,2000)"=1, "[2000,2010)"=2 ,"[2010,2020]" = 3)
+df$decadenum <- as.numeric(df$decadenum)
+```
+
+Given a country/region, the function obtains the average emissions of the gases on the 3 decades we have observations and creates a dataframe that will be fitted using a linear regression model. Then, the function returns the projection of the average emission of gases of that country/region for a given decade.
+
+# Define the Function
+```{r}
+decadepredict <- function(Country="World",Decade=2030) {
+  
+  gases <- c("co2","methane", "nitrous_oxide")
+  
+  for (i in 1:3) {
+  subset1 <- subset(df, decadenum==1 & country==Country)
+  subset2 <- subset(df, decadenum==2 & country==Country)
+  subset3 <- subset(df, decadenum==3 & country==Country)
+  
+  m1co2 <- mean(subset1[,gases[i]],na.rm=T)
+  m2co2 <- mean(subset2[,gases[i]],na.rm=T)
+  m3co2 <- mean(subset3[,gases[i]],na.rm=T)
+  
+  datatoadjust <- data.frame(c(m1co2,m2co2,m3co2),c(1,2,3))
+  names(datatoadjust) <- c("y","x")
+  model <- lm(y~x, data=datatoadjust)
+  summary(model)
+  
+  new <- data.frame(x = (Decade-1990)/10)
+  cat("Prediction for average anual emissions of", gases[i], "in", Country, "in the decade", 
+      Decade, "is:", predict(model,new), "million tones", "\n")
+  }
+  cat("\n")
+}
+```
+
+We apply the function on different countries and make the prediction for different decades.
+```{r}
+decadepredict()
+decadepredict("Spain",2050)
+decadepredict("India", 2060)
+```
+
+Alternatively, one could also make a linear regression model for predicting the anual emission of gases for a certain year and a given country.
+
+#Define the function
+```{r}
+Prediction <- function(Country="World", predictyear=2030) {
+  
+  subset1 <- data.frame(subset(df, country==Country))
+  modelco2 <- lm(co2~year, data=subset1)
+  modelmethane <- lm(methane~year , data=subset1)
+  modelnitrous <- lm(nitrous_oxide~year, data=subset1)
+  new <- data.frame(year = predictyear)
+  cat("Projection of gas emissions for country", Country, "in", 
+      predictyear, ":" , "\n" , "CO2: " , as.vector(predict(modelco2,new)) , "million tones","\n" ,
+      "Methane: " ,as.vector(predict(modelmethane,new)) ,"million tones", "\n" ,
+      "Nitrous Oxide: " ,as.vector(predict(modelnitrous,new)) ,"million tones", "\n", "\n")
+  cat("The summary of the regression models obtained are displayed below:","\n","\n")
+  print(summary(modelco2))
+  print(summary(modelmethane))
+  print(summary(modelnitrous))
+  cat("\n","\n")
+}
+```
+
+The outcome also includes a summary of the linear regression made for each gas.
+```{r}
+Prediction()
+Prediction("China", 2035)
+Prediction("Russia", 2042)
+```
+
+## c) Comments on the results found
+
+The results found, especially when looking for the entire world or overall regions that concentrate big part of the population, suggest that gas emissions are increasing with time and will continue to increase in the next upcoming years. It is true, that for some developed countries, the CO2, Methane and Nitrous Oxide emissions present a change on its tendency for the last years, where the growth trend is flattening or in some cases even decreasing. However, taking into account that the climate change is a global problem rather than a matter that can be divided divided in countries, we see that for regions that concentrate most of the world population, such as China or India, present highly increasing emissions year over year, that sum up to a overall increase of the World's gas emissions.
+
+```{r}
+avgco2 <- with(subset(Greenhouse_Gas_Emissions, country == "World"),tapply(co2, decade, mean, na.rm=T))
+avgmethane <- with(subset(Greenhouse_Gas_Emissions, country == "World"),tapply(methane, decade, mean, na.rm=T))
+avgnitrous <- with(subset(Greenhouse_Gas_Emissions, country == "World"),tapply(nitrous_oxide, decade, mean, na.rm=T))
+
+#Using barplots:
+barplot(avgco2, main="CO2 average anual emissions by decade")
+barplot(avgmethane, main="Methane average anual emissions by decade")
+barplot(avgnitrous, main="Nitrous Oxide average anual emissions by decade")
+```
+
+Therefore, we can argue that during the next years, if the gas emissions increase as suggested from the data, they will have a significant impact on the climate change.
+
+From the statistical point, we have seen that for the entire World, all of the gas emissions studied present a linear trend with positive slope that is statistically significant.
+
+However, when modelling the CO2 emissions taking into account all data available (not only the last 3 decades), one can realize that rather a linear trend, the CO2 emissions present exponentially increasing values and hence, the linear model is no longer appropriate to make predictions.
+
+Therefore, other models should be studied that take into account the non-linearity behavior and other more complex factors. One could probably better model the gas emissions over years with a time series approach, i.e. , fitting an ARIMA model.It could be also used and approach of a panel data linear model for accounting for the individual heterogeneity across countries. Also, other variables should be included in the model if we wanted to make more accurate predictions about the emissions of CO2 on the next years, such as indicators for renewable energy use and production, population growth, demand on energy consumption...
+
+
+## d) Look for other data to help to better explain the possible climate change that is taking place.
+
+
+Webpage for climate change data
+https://climatedata.imf.org/pages/climatechange-data/#cc5
+
+Firstly, we present the data and we arrange it in a way so that it will be easy to manipulate it later on.
+
+#World Monthly Atmospheric Carbon Dioxide concentrations
+
+This indicator presents the concentration of carbon dioxide in the atmosphere, on a monthly and yearly basis, dating back to 1958.
+The source data for these visualizations comes from the National Oceanic and Atmospheric Association Global Monitoring Laboratory.
+```{r}
+AtmosCO2conc <- read.csv2("Atmospheric_CO2_Concentrations.csv",header = T,sep = ",")
+```
+
+#Climate related disasters frequency
+
+The links between climate change and natural disasters. This dataset depicts the climate-related disasters over time.
+```{r}
+Climatedisasters <- read.csv2("Climate_related_disasters_frequency.csv",header = T,sep = ",")
+```
+
+```{r}
+s2 <- matrix(subset(Climatedisasters, ISO2=="AQ"&Indicator=="Climate related disasters frequency, Number of Disasters: TOTAL")[,8:ncol(Climatedisasters)],ncol=1)
+disasters <- data.frame("year"=1980:2020, "Total number of disasters"=as.numeric(s2))
+```
+
+#Annual Mean Global Surface Temperature
+
+This indicator presents the mean surface temperature change during the period 1961-2019, using temperatures between 1951 and 1980 as a baseline. 
+This data is provided by the Food and Agriculture Organization Corporate Statistical Database (FAOSTAT) and is based on publicly available GISTEMP data from the National Aeronautics and Space Administration Goddard Institute for Space Studies (NASA GISS).
+
+```{r}
+meanglobaltemp <- read.csv2("Mean_Global_Surface_Temperature.csv",header = T,sep = ",")
+s1 <- matrix(subset(meanglobaltemp, Country=="World")[,8:ncol(meanglobaltemp)],ncol=1)
+avg_change_temp_world <- data.frame("year"=1961:2020, "Avg. Change in temperature"=as.numeric(s1))
+```
+
+# Analysis of the datasets (temperature vs. disasters)
+
+We merge the dataframes
+```{r}
+dataframe2 <- merge(disasters, avg_change_temp_world, by='year')
+```
+
+We compute the Correlation matrix
+```{r}
+cormat3 <- round(cor(dataframe2[,2:3], use = "complete"),2)
+cormat3
+```
+One can see that there is a strong positive correlation between the frequency of disasters related to the climate and the average change in temperature.
+
+# Plotting the data
+
+In order to see the relation more graphically, we overlay both variables and we plot them across the years. We can see that as the temperature increases along time, it has been registered a greater number of climate related disasters.
+```{r}
+par(mar=c(5, 4, 4, 6) + 0.1)
+plot(dataframe2$year, dataframe2$Avg..Change.in.temperature, axes=F,type='l',xlab="",ylab="")
+axis(2,col="black",las=1)
+mtext("Avg. Temperature change with respect to a baseline",side=2,line=2.5)
+par(new=T)
+plot(dataframe2$year, dataframe2$Total.number.of.disasters, axes=F, type='l',xlab="",ylab="", col="red")
+axis(4, ylim=c(0,7000), col="red",col.axis="red",las=1)
+mtext("Number of disasters",side=4,col="red",line=4) 
+axis(1,pretty(range(dataframe2$year),10))
+mtext("Years",side=1,col="black",line=2.5) 
+```
+
+# Analysis of the datasets (temperature vs. CO2, Methane and Nitrous Oxide emissions)
+
+We merge the dataframes
+```{r}
+dataframe <- merge(avg_change_temp_world, data.frame(subset(Greenhouse_Gas_Emissions, country=="World")[,c("year","co2","methane","nitrous_oxide")]), by="year")
+```
+
+
+We compute the Correlation matrix
+```{r}
+cormat2 <- round(cor(dataframe[2:5], use = "complete"),2)
+cormat2
+```
+Again, we see a strong positive correlation between the emissions and the average change in temperature.
+
+Next, we plot the pairs of correlated variables across years.
+
+# Time series of temperature change and CO2 overlayed
+
+```{r}
+par(mar=c(5, 4, 4, 6) + 0.1)
+plot(dataframe$year, dataframe$Avg..Change.in.temperature, axes=F,type='l',xlab="",ylab="")
+axis(2,col="black",las=1)
+mtext("Avg. Temperature change with respect to a baseline",side=2,line=2.5)
+par(new=T)
+plot(dataframe$year, dataframe$co2, axes=F, type='l',xlab="",ylab="", col="green")
+axis(4, ylim=c(0,7000), col="green",col.axis="green",las=1)
+mtext("Co2 emissions in millions of tonnes",side=4,col="green",line=4) 
+axis(1,pretty(range(dataframe$year),10))
+mtext("Years",side=1,col="black",line=2.5)
+```
+
+# Time series of temperature change and Methane overlayed
+
+```{r}
+par(mar=c(5, 4, 4, 6) + 0.1)
+plot(dataframe$year, dataframe$Avg..Change.in.temperature, axes=F,type='l',xlab="",ylab="")
+axis(2,col="black",las=1)
+mtext("Avg. Temperature change with respect to a baseline",side=2,line=2.5)
+par(new=T)
+plot(dataframe$year, dataframe$methane, axes=F, type='l',xlab="",ylab="", col="orange")
+axis(4, ylim=c(0,7000), col="orange",col.axis="orange",las=1)
+mtext("Methane emissions in tonnes",side=4,col="orange",line=4) 
+axis(1,pretty(range(dataframe$year),10))
+mtext("Years",side=1,col="black",line=2.5) 
+```
+
+
+# Time series of temperature change and Nitrous Oxide overlayed
+
+```{r}
+par(mar=c(5, 4, 4, 6) + 0.1)
+plot(dataframe$year, dataframe$Avg..Change.in.temperature, axes=F,type='l',xlab="",ylab="")
+axis(2,col="black",las=1)
+mtext("Avg. Temperature change with respect to a baseline",side=2,line=2.5)
+par(new=T)
+plot(dataframe$year, dataframe$nitrous_oxide, axes=F, type='l',xlab="",ylab="", col="blue")
+axis(4, ylim=c(0,7000), col="blue",col.axis="blue",las=1)
+mtext("Nitrous oxide emissions in tonnes",side=4,col="blue",line=4) 
+axis(1,pretty(range(dataframe$year),10))
+mtext("Years",side=1,col="black",line=2.5) 
+```
+
+
+# Conclusion
+
+The data presented on this section give some insight on some observable variables that can be directly related to the climate change. Although correlation does not necessarily imply causation, we are inclined to thing that the increasing amounts of emission over the years of CO2, Methane and Nitrous Oxide does indeed have a significant effect on the climate change and could be use to model or predict the rate at which climate change occurs. However, it is important to highlight that this is not a complex and complete analysis of the climate change situation. To do so properly, one would need to take into account many other factors and variables involved on the topic and would need to have a deep understanding on subjects related to the environment to be able to make a firm and solid statement in the case presented here.
+
+
+
+## e) Library creation on Github
+
+A library has been created and uploaded to Github with all of the functions and data from this script.
+To download the library and use it go to: https://github.com/oriol33/R-library-CO2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
